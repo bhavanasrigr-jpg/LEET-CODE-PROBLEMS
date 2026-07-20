@@ -1,0 +1,44 @@
+mport java.util.function.IntConsumer;
+import java.util.concurrent.Semaphore;
+
+class ZeroEvenOdd {
+    private int n;
+    
+    private Semaphore zeroSem = new Semaphore(1); // zero goes first
+    private Semaphore evenSem = new Semaphore(0);
+    private Semaphore oddSem = new Semaphore(0);
+
+    public ZeroEvenOdd(int n) {
+        this.n = n;
+    }
+
+    // printNumber.accept(x) outputs "x", where x is an integer.
+    public void zero(IntConsumer printNumber) throws InterruptedException {
+        for (int i = 1; i <= n; i++) {
+            zeroSem.acquire();
+            printNumber.accept(0);
+            // odd numbers go on odd i, even numbers go on even i
+            if (i % 2 == 1) {
+                oddSem.release();
+            } else {
+                evenSem.release();
+            }
+        }
+    }
+
+    public void even(IntConsumer printNumber) throws InterruptedException {
+        for (int i = 2; i <= n; i += 2) {
+            evenSem.acquire();
+            printNumber.accept(i);
+            zeroSem.release();
+        }
+    }
+
+    public void odd(IntConsumer printNumber) throws InterruptedException {
+        for (int i = 1; i <= n; i += 2) {
+            oddSem.acquire();
+            printNumber.accept(i);
+            zeroSem.release();
+        }
+    }
+}
