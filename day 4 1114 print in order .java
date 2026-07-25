@@ -1,45 +1,36 @@
-import java.util.concurrent.CountDownLatch;
 
-class Foo {
 
-    // Step 1: Create two latches
-    CountDownLatch firstDone = new CountDownLatch(1);
-    CountDownLatch secondDone = new CountDownLatch(1);
+      class Foo {
+    private int state = 1;
+    private final Object lock = new Object();
 
-    // Step 2: Constructor
-    public Foo() {
-    }
+    public Foo() {}
 
-    // Step 3: first() method
     public void first(Runnable printFirst) throws InterruptedException {
-
-        // Print "first"
-        printFirst.run();
-
-        // Signal that first() is finished
-        firstDone.countDown();
+        synchronized (lock) {
+            printFirst.run();
+            state = 2;
+            lock.notifyAll();
+        }
     }
 
-    // Step 4: second() method
     public void second(Runnable printSecond) throws InterruptedException {
-
-        // Wait until first() finishes
-        firstDone.await();
-
-        // Print "second"
-        printSecond.run();
-
-        // Signal that second() is finished
-        secondDone.countDown();
+        synchronized (lock) {
+            while (state != 2) {
+                lock.wait();
+            }
+            printSecond.run();
+            state = 3;
+            lock.notifyAll();
+        }
     }
 
-    // Step 5: third() method
     public void third(Runnable printThird) throws InterruptedException {
-
-        // Wait until second() finishes
-        secondDone.await();
-
-        // Print "third"
-        printThird.run();
+        synchronized (lock) {
+            while (state != 3) {
+                lock.wait();
+            }
+            printThird.run();
+        }
     }
 }
